@@ -9,13 +9,28 @@ const PITCH =
 const OUT_DIR = "/output";
 const OUT_FILE = `${OUT_DIR}/entry.txt`;
 
-const length = [...PITCH].length;
-if (length < 1 || length > 240 || PITCH.trim().length === 0) {
-  throw new Error(
-    `pitch must be 1-240 characters and not only whitespace, got ${length}`,
-  );
+// Validate the pitch before writing: 1–240 chars, a single sentence,
+// and not only whitespace. A sentence terminator may only appear at the end.
+function validate(pitch: string): void {
+  const length = [...pitch].length;
+  if (length < 1 || length > 240) {
+    throw new Error(`pitch must be 1-240 characters, got ${length}`);
+  }
+  if (pitch.trim().length === 0) {
+    throw new Error("pitch must not be only whitespace");
+  }
+  const body = pitch.trim();
+  // A sentence terminator only counts when it ends the sentence: followed by
+  // a space and a capital letter, or by the end of the string. A period inside
+  // a word (e.g. "make.fun") is not a terminator.
+  const terminators = body.match(/[.!?]+(?=\s+[A-Z]|$)/g) ?? [];
+  if (terminators.length !== 1 || !/[.!?]$/.test(body)) {
+    throw new Error("pitch must be a single sentence");
+  }
 }
+
+validate(PITCH);
 
 mkdirSync(OUT_DIR, { recursive: true });
 writeFileSync(OUT_FILE, PITCH, "utf8");
-console.log(`Wrote ${length} characters to ${OUT_FILE}`);
+console.log(`Wrote ${[...PITCH].length} characters to ${OUT_FILE}`);
